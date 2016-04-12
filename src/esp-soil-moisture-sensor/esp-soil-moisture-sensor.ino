@@ -3,7 +3,7 @@
 
 String apiKey ="<YOUR-API-KEY>";
 const char* MY_SSID = "<YOUR-SSID>"; 
-const char* MY_PWD = "<YOUR-PASSWORD";
+const char* MY_PWD = "<YOUR-PASSWORD>";
 
 dht11 DHT;
 
@@ -15,7 +15,7 @@ const char* server = "api.thingspeak.com";
 
 int sent = 0;
 
-#define SLEEP_TIME 600 * 1000 * 1000
+#define SLEEP_TIME 1200 * 1000 * 1000
 
 void setup() {
   Serial.begin(115200);
@@ -40,7 +40,7 @@ void loop() {
   Serial.println("Requesting Temperature and Humidity...");
   
   int chk = DHT.read(pin_read);
-  if(chk == DHTLIB_OK){
+  if(chk == 0){
     hum = DHT.humidity;
     temp = DHT.temperature;
     Serial.print("Humidity:");
@@ -131,4 +131,4 @@ void sendData(float hum, float temp,float soil_hum) {
    }//end if
    sent++;
    client.stop();
-}//end send
+}
