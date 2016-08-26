@@ -72,8 +72,8 @@ void loop() {
   Serial.println(temp);
   delay(5000);
   
-  //sendData(temp, soil_hum);
-  //ESP.deepSleep(SLEEP_TIME, WAKE_RF_DEFAULT);
+  sendData(temp, soil_hum);
+  ESP.deepSleep(SLEEP_TIME, WAKE_RF_DEFAULT);
 }
 
 void connectWifi()
@@ -144,8 +144,8 @@ void sendData(float temp, float soil_hum) {
        client.print("\n\n");
        client.print(postStr);
        delay(1000);
+   }
    
-   }//end if
    sent++;
    client.stop();
-}//end send
+}
