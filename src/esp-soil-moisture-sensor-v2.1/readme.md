@@ -1,1 +1,1 @@
-Only available for sensor v2.1
+Only available for sensor hardware rev 2.1
