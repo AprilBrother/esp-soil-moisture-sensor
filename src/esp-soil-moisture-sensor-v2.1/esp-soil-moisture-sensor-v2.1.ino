@@ -5,43 +5,22 @@ String API_KEY ="<YOUR-API-KEY>";
 const char* MY_SSID = "<YOUR-SSID>"; 
 const char* MY_PWD = "<YOUR-PASSWORD>";
 
-const int PIN_CLK = D5;
-const int PIN_SOIL = A0; 
-const int PIN_LED = D7;
-const char* SERVER = "api.thingspeak.com";
-const int TMP_ADDR = 0x48;
+const int PIN_CLK   = D5;
+const int PIN_SOIL  = A0; 
+const int PIN_LED   = D7;
+const int PIN_SWITCH = D8;
+
+// I2C address for temperature sensor
+const int TMP_ADDR  = 0x48;
 
 int sent = 0;
 
 #define SLEEP_TIME 1200 * 1000 * 1000
 
-void setup() {
-  Serial.begin(115200);
-  Wire.begin();
-  pinMode(PIN_CLK, OUTPUT);
-  pinMode(PIN_SOIL, INPUT);
-  pinMode(PIN_LED, OUTPUT);
-  digitalWrite(PIN_LED, HIGH);
-  
-  // device address is specified in datasheet
-  Wire.beginTransmission(TMP_ADDR); // transmit to device #44 (0x2c)
-  Wire.write(byte(0x01));            // sends instruction byte
-  Wire.write(0x60);             // sends potentiometer value byte
-  Wire.endTransmission();     // stop transmitting
-  
-  analogWriteFreq(40000);
-  analogWrite(PIN_CLK, 400);
-  delay(500);
-  connectWifi();
-}
 
-void loop() {
-  digitalWrite(PIN_LED, LOW);
-  delay(100);
-  digitalWrite(PIN_LED, HIGH);
-  float hum=0,temp=0,soil_hum=0;
-  Serial.println("Requesting Temperature...");
-
+float readTemperature() {
+  float temp;
+  
   // Begin transmission
   Wire.beginTransmission(TMP_ADDR);
   // Select Data Registers
@@ -61,23 +40,75 @@ void loop() {
 
     int rawtmp = msb << 8 |lsb;
     int value = rawtmp >> 4;
-    temp = value * 0.0625 ;
+    temp = value * 0.0625;
+
+    return temp;
+  }
+  
+}
+
+// Get soil sensor value
+float readSoilSensor() {
+  float tmp = 0;
+  float total = 0;
+  float rawVal = 0;
+  int sampleCount = 3;
+
+  for(int i = 0; i < sampleCount; i++){
+    rawVal = analogRead(PIN_SOIL);
+    total+= rawVal;
+    Serial.println(rawVal);
   }
 
-  delay(1000);
-  soil_hum = readSoilVal(8);
-  Serial.print("Soil_Humidity:");
+  tmp = total / sampleCount;
+  return tmp;
+}
+
+void setup() {
+  Serial.begin(115200);
+  Wire.begin();
+  pinMode(PIN_CLK, OUTPUT);
+  pinMode(PIN_SOIL, INPUT);
+  pinMode(PIN_LED, OUTPUT);
+  pinMode(PIN_SWITCH, OUTPUT);
+
+  digitalWrite(PIN_LED, HIGH);
+  digitalWrite(PIN_SWITCH, LOW);
+
+  // device address is specified in datasheet
+  Wire.beginTransmission(TMP_ADDR); // transmit to device #44 (0x2c)
+  Wire.write(byte(0x01));            // sends instruction byte
+  Wire.write(0x60);             // sends potentiometer value byte
+  Wire.endTransmission();     // stop transmitting
+  
+  analogWriteFreq(40000);
+  analogWrite(PIN_CLK, 400);
+  delay(500);
+  connectWifi();
+}
+
+void loop() {
+  digitalWrite(PIN_LED, LOW);
+  delay(100);
+  digitalWrite(PIN_LED, HIGH);
+  
+  float temp = 0, soil_hum = 0;
+  Serial.println("Requesting Temperature...");
+  temp = readTemperature();
+  
+  delay(100);
+  soil_hum = readSoilSensor();
+  Serial.print("Soil Humidity:");
   Serial.println(soil_hum);
   Serial.print("Temperature:");
   Serial.println(temp);
-  delay(5000);
+  delay(500);
   
   sendData(temp, soil_hum);
   ESP.deepSleep(SLEEP_TIME, WAKE_RF_DEFAULT);
 }
 
-void connectWifi()
-{
+void connectWifi() {
   Serial.print("Connecting to " + *MY_SSID);
   WiFi.begin(MY_SSID, MY_PWD);
   while (WiFi.status() != WL_CONNECTED) {
@@ -90,41 +121,10 @@ void connectWifi()
   Serial.println("");  
 }//end connect
 
-// Get average value
-float readSoilVal(int n) {
-  float valtemp = 0;
-  float ValBuf[n];
-  int i = 0;
-  int j = 0;
-
-  for(i=0;i<n;i++){
-    ValBuf[i] = analogRead(PIN_SOIL);
-    Serial.println(ValBuf[i]);
-  }
-
-  for(i=0;i<n-1;i++){
-    for(j=i+1;j<n;j++){
-      if(ValBuf[i]>ValBuf[j]){
-        valtemp = ValBuf[i];
-        ValBuf[i] = ValBuf[j];
-        ValBuf[j] = valtemp;
-      }
-    }
-  }
-
-  valtemp = 0;
-  for(i=1;i<n-1;i++){
-    valtemp+=ValBuf[i];
-  }
-  valtemp/=(n-2);
-  return valtemp;
-}
-
-
 void sendData(float temp, float soil_hum) {  
    WiFiClient client;
   
-   if (client.connect(SERVER, 80)) { // use ip 184.106.153.149 or api.thingspeak.com
+   if (client.connect("api.thingspeak.com", 80)) { // use ip 184.106.153.149 or api.thingspeak.com
        Serial.println("WiFi Client connected ");
        
        String postStr = API_KEY;
