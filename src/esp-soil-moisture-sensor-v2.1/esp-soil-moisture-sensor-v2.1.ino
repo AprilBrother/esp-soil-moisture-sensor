@@ -73,7 +73,7 @@ void setup() {
   pinMode(PIN_SWITCH, OUTPUT);
 
   digitalWrite(PIN_LED, HIGH);
-  digitalWrite(PIN_SWITCH, LOW);
+  digitalWrite(PIN_SWITCH, HIGH);
 
   // device address is specified in datasheet
   Wire.beginTransmission(TMP_ADDR); // transmit to device #44 (0x2c)
