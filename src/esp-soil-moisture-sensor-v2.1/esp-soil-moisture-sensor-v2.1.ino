@@ -45,6 +45,7 @@ float readTemperature() {
     return temp;
   }
   
+  return 0;
 }
 
 // Get soil sensor value
@@ -81,8 +82,8 @@ void setup() {
   Wire.write(0x60);             // sends potentiometer value byte
   Wire.endTransmission();     // stop transmitting
   
-  analogWriteFreq(40000);
-  analogWrite(PIN_CLK, 400);
+  analogWriteFreq(60000);
+  analogWrite(PIN_CLK, 20);
   delay(500);
   connectWifi();
 }
